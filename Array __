@@ -1,0 +1,98 @@
+.global main
+.func main
+   
+main:
+    BL _seedrand
+    MOV R8, #0
+    MOV R5, #40
+    MOV R9, #0              
+    MOV R10, #0
+    MOV R11, #0x3E8
+    
+readloop:
+    CMP R9, #10            
+    BEQ readdone
+    BL _getrand
+    BL _compare
+    MOV R2, R0             
+    MOV R1, R9            
+    BL  _printf             
+    ADD R9, R9, #1          
+    B   readloop         
+
+readdone:
+    BL _printsl
+    BL _printlr
+    B _exit              
+
+_seedrand:
+	PUSH {LR}
+	MOV r0, #0
+	BL time
+	MOV r1, r0
+	BL srand
+	POP {PC}
+
+_getrand:
+	PUSH {LR}
+	BL rand
+	LSR R0, R0, #0Xe
+	TST R0, R0, LSR #9
+	LSR R0, R0, #0X7
+        SUB R0, R0, #44
+        CMP R0, R8
+        BL _value
+        MOV R2, R0
+	POP {PC}
+
+_value:
+	PUSH {LR}
+	AND R0, R0, #1000
+	CMP R0, #1000
+	BEQ _sub
+        POP {PC}
+
+_sub:
+	PUSH {LR}
+	SUB R0, R0, #1
+	POP {PC}
+
+_compare:
+	PUSH {LR}
+	CMP R2, R10
+	MOVGT R10, R2
+	CMP R2, R11
+	MOVLO R11, R2
+	POP {PC}
+
+_printsl:
+     PUSH {LR}
+     LDR R0, =print_sm
+     MOV R1, R11
+     BL printf  
+     POP {PC}
+
+_printlr:
+	PUSH {LR}
+	LDR R0, =print_lg
+        MOV R1, R10
+        BL printf
+	POP {PC}   
+
+_exit:  
+    MOV R7, #1              
+    SWI 0                   
+       
+_printf:
+    PUSH {LR}               
+    LDR R0, =printf_str     
+    BL printf               
+    POP {PC}                
+   
+.data
+
+.balign 4
+a:              .skip       40
+printf_str:     .asciz      "a[%d] = %d\n"
+print_lg:	.asciz	    "MAXIMUM VALUE= %d\n"
+print_sm:	.asciz	    "MINIMUM VALUE= %d\n"
